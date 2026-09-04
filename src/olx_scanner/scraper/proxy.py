@@ -3,15 +3,23 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-from pathlib import Path
 import re
 import socket
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn, TimeRemainingColumn
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TaskProgressColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
 from rich.table import Table
 
 from olx_scanner.core.models import VerifiedProxy
@@ -21,7 +29,7 @@ TARGET_BASE_URL = "https://www.olx.pl"
 
 def parse_proxy_line(raw_line: str) -> dict[str, Any] | None:
     line = raw_line.strip()
-    if not line or line.startswith("#") or line.startswith("//"):
+    if not line or line.startswith(("#", "//")):
         return None
 
     kind = "http"

@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
 import hashlib
 import os
-from pathlib import Path
 import re
 import signal
 import sys
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
+from pathlib import Path
 
 from rich.box import ROUNDED
 from rich.console import Console
@@ -21,13 +21,13 @@ from rich.table import Table
 from olx_scanner.ai.client import DeepSeekAnalyzer
 from olx_scanner.ai.heuristics import is_likely_iphone_offer
 from olx_scanner.core.config import init_environment
-from olx_scanner.ui.wizard import get_or_init_config
 from olx_scanner.i18n.translations import get_language, set_language, t
 from olx_scanner.scraper.client import TLSScraper
 from olx_scanner.scraper.proxy import select_best_olx_proxies
 from olx_scanner.storage.database import Database
 from olx_scanner.ui.dashboard import render_dashboard
 from olx_scanner.ui.state import DashboardState
+from olx_scanner.ui.wizard import get_or_init_config
 
 STOP_EVENT = threading.Event()
 LOG_LOCK = threading.Lock()
@@ -228,7 +228,7 @@ def run_single_scan_cycle(args: argparse.Namespace, db: Database, scraper: TLSSc
     futures = [executor.submit(process_single_offer, offer, proxy_used, scraper, ai, db) for offer, proxy_used in all_new_queue]
 
     try:
-        for f in as_completed(futures):
+        for _future in as_completed(futures):
             if STOP_EVENT.is_set():
                 break
             completed += 1

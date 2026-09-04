@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from typing import Any
+
 from rich.box import ROUNDED
 from rich.console import Console
 from rich.panel import Panel
@@ -64,7 +65,7 @@ def run_initial_setup_wizard(console: Console | None = None) -> dict[str, Any]:
         custom_proxy_val = "http://127.0.0.1:8080"
     elif proxy_choice == "3":
         custom_input = Prompt.ask(f"\n{t('prompt_custom_proxy_value')}", console=console).strip()
-        if custom_input.endswith(".txt") or custom_input.endswith(".json"):
+        if custom_input.endswith((".txt", ".json")):
             proxy_mode = "file"
             proxy_file_val = custom_input
         else:

@@ -40,6 +40,23 @@ packages = ["src/olx_scanner"]
 line-length = 110
 target-version = "py310"
 
+[tool.ruff.lint]
+# Sprawdzone reguły wyłapujące realne błędy i dbające o czystość kodu:
+select = [
+    "E4", "E7", "E9", # Krytyczne błędy składniowe i standardowe błędy kodu
+    "F",              # Pyflakes (nieużywane importy, niezdefiniowane zmienne itp.)
+    "I",              # isort (automatyczne sortowanie importów)
+    "UP",             # pyupgrade (nowoczesna składnia Pythona 3.10+)
+    "B",              # flake8-bugbear (rzeczywiste błędy logiczne i pułapki)
+]
+ignore = [
+    "E501",   # Ignoruj długość linii (teksty i18n, zapytania SQL, nagłówki User-Agent)
+    "RUF001", # Ignoruj homoglify cyrylicy w stringach (niezbędne dla języków uk i be!)
+    "RUF002", # Ignoruj homoglify w docstringach
+    "RUF003", # Ignoruj homoglify w komentarzach
+    "B008",   # Do not perform function call in argument defaults
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]

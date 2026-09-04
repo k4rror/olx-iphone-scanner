@@ -1,5 +1,6 @@
 # tests/unit/test_database.py
 from pathlib import Path
+
 from olx_scanner.storage.database import Database
 
 

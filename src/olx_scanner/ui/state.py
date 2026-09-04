@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from collections import deque
-from dataclasses import dataclass, field
 import re
 import threading
 import time
+from collections import deque
+from dataclasses import dataclass, field
 from typing import Any
 
 ANSI_REGEX = re.compile(r"\x1b\[[0-9;]*m")

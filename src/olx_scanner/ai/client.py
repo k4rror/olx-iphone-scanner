@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
+
 from openai import OpenAI
 
 from olx_scanner.ai.json_repair import auto_repair_json
@@ -83,7 +85,7 @@ class DeepSeekAnalyzer:
                     if "thinking" in str(ex_think).lower() or "400" in str(ex_think):
                         completion = self.client.chat.completions.create(**completion_params)
                     else:
-                        raise ex_think
+                        raise
 
                 elapsed_ms = int((time.perf_counter() - t0) * 1000)
                 content = completion.choices[0].message.content

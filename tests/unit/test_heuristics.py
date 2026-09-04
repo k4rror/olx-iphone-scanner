@@ -1,4 +1,5 @@
 import pytest
+
 from olx_scanner.ai.heuristics import is_likely_iphone_offer
 
 

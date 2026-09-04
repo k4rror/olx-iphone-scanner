@@ -10,13 +10,13 @@ from olx_scanner.scraper.proxy import (
 
 __all__ = [
     "TLSScraper",
-    "create_tls_session",
     "clean_text",
-    "extract_full_offer_data_from_html",
-    "parse_price",
+    "create_tls_session",
     "detect_local_rotator",
     "display_no_proxy_referral",
+    "extract_full_offer_data_from_html",
     "load_candidate_proxies",
+    "parse_price",
     "parse_proxy_line",
     "select_best_olx_proxies",
 ]

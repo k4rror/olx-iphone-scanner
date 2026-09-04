@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import re
 
 NEGATIVE_TITLE_KEYWORDS = [
@@ -47,9 +48,12 @@ def is_likely_iphone_offer(title: str, description: str = "", price: float | Non
 
     is_vintage = bool(re.search(r"iphone\s+([4567]|se\s*1|3g)", t_lower))
     min_price_threshold = 50.0 if is_vintage else 100.0
-    if price is not None and 0 < price < min_price_threshold:
-        if not any(kw in t_lower for kw in ["uszkodzony", "na części", "blokada", "icloud"]):
-            return False, f"Podejrzanie niska cena ({price:.0f} PLN)"
+    if (
+        price is not None
+        and 0 < price < min_price_threshold
+        and not any(kw in t_lower for kw in ["uszkodzony", "na części", "blokada", "icloud"])
+    ):
+        return False, f"Podejrzanie niska cena ({price:.0f} PLN)"
 
     has_keyword = (
         "iphone" in t_lower or "i phone" in t_lower or "apple" in t_lower or

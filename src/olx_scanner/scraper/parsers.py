@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Callable
 import unicodedata
+from collections.abc import Callable
+from typing import Any
+
 from bs4 import BeautifulSoup
 
 
@@ -75,9 +77,14 @@ def extract_full_offer_data_from_html(
     params: list[str] = []
     for span in soup.find_all(["span", "p", "div"], attrs={"data-nx-name": "P3"}):
         txt = span.get_text(strip=True)
-        if ":" in txt and len(txt) < 80 and not txt.startswith("Zwróć") and not txt.startswith("Więcej"):
-            if txt not in params:
-                params.append(txt)
+        if (
+            ":" in txt
+            and len(txt) < 80
+            and not txt.startswith("Zwróć")
+            and not txt.startswith("Więcej")
+            and txt not in params
+        ):
+            params.append(txt)
 
     if not params:
         param_container = soup.find("div", attrs={"data-testid": "ad-attributes"}) or soup.find(

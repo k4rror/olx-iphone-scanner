@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+
 from dotenv import load_dotenv
 
 CONFIG_FILE_PATH = Path("scanner_config.json")

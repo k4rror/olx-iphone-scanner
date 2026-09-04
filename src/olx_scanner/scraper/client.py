@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import re
 import threading
-import time
-from typing import Any, Callable
-from bs4 import BeautifulSoup
+from collections.abc import Callable
+from typing import Any
+
 import tls_client
+from bs4 import BeautifulSoup
 
 from olx_scanner.core.models import VerifiedProxy
 from olx_scanner.scraper.parsers import extract_full_offer_data_from_html, parse_price
