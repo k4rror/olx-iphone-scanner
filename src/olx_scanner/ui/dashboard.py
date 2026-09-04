@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
 from rich.box import ROUNDED
 from rich.console import ConsoleDimensions, Group
 from rich.layout import Layout
