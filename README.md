@@ -1,156 +1,174 @@
-# 📱 OLX iPhone Scanner & DeepSeek AI Appraiser
+# olx-iphone-scanner
 
-[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Terminal UI](https://img.shields.io/badge/UI-Rich%20TUI-cyan.svg)](https://github.com/Textualize/rich)
-[![AI Engine](https://img.shields.io/badge/AI-DeepSeek-magenta.svg)](https://www.deepseek.com/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/k4rror/olx-iphone-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/k4rror/olx-iphone-scanner/actions/workflows/ci.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-An intelligent, real-time terminal scanner and deal appraiser for iPhone listings on **OLX Poland** (`olx.pl`). 
+**English** | [Polski](README.pl.md) | [Deutsch](README.de.md) | [Українська](README.uk.md) | [Беларуская](README.be.md)
 
-Finding genuine iPhone bargains on OLX is notoriously tedious: sellers frequently hide critical battery health metrics in informal descriptions (e.g. *"kondycja 84%"*, *"nowa bateria zamiennik"*), fail to disclose locked iCloud accounts, or flood categories with accessories (cases, boxes, screen protectors).
+Scans iPhone listings on OLX Poland (`olx.pl`) and stores structured appraisals in a local SQLite database. Search pages are fetched with a Chrome 120 TLS fingerprint, accessories and non-Apple listings are dropped by regex heuristics, and the remaining offers are sent to DeepSeek to extract model, storage, battery health, damage and lock status.
 
-**OLX iPhone Scanner** automates this entire pipeline: it scrapes fresh listings with browser-grade TLS fingerprinting, filters out junk with high-speed heuristics, and uses **DeepSeek AI** to evaluate technical conditions and battery health into a structured SQLite database and an interactive, real-time terminal dashboard.
+Two front ends share the same database: a Rich terminal UI (`olx-scanner`) and a FastAPI/Jinja2 web dashboard (`olx-dashboard`).
 
----
-
-## 🌟 Key Features
-
-- **⚡ Cloudflare & Anti-Bot Bypass:** Utilizes `tls-client` configured with Chrome 120 TLS fingerprints, custom headers, and request emulation to access OLX without blocks or CAPTCHAs.
-- **🧠 DeepSeek AI Appraisal:** Extracts exact device specs from unformatted, raw Polish descriptions:
-  - Exact model & storage capacity (GB)
-  - Color
-  - Battery Health percentage (`battery_health_pct`)
-  - Physical & functional condition
-  - Damage detection & defect descriptions
-  - Face ID & iCloud lock status
-  - Concise one-sentence appraiser verdict
-- **🛡️ Token-Saving Heuristic Pre-filter:** Filters out phone cases, boxes, replacement parts, chargers, and non-Apple brands (Samsung, Xiaomi, Pixel) using deterministic regex rules **before** making AI API calls.
-- **🔄 Smart Proxy Management & Rotator Support:**
-  - Direct TLS mode (uses your machine's connection).
-  - Native integration with local rotators (auto-detects `http://127.0.0.1:8080`).
-  - Asynchronous multi-threaded proxy pool testing (validates HTTPS tunnels directly to OLX).
-- **📊 Interactive Rich Live TUI:** Real-time terminal interface displaying:
-  - KPI cards (Total scanned, AI-analyzed, Healthy, Damaged, Skipped duplicates).
-  - Live table of newly analyzed iPhone listings.
-  - Scan progress indicators and countdown timers for watch mode.
-  - Rolling real-time event log.
-- **⚡ Anti-Duplicate & Early-Stopping Engine:** Generates MD5 page fingerprints and checks against local SQLite history. If a page contains 100% known listings, the scanner triggers early stopping to avoid redundant requests.
-- **🌐 Native Multi-Language Support:** Full localization for UI and AI prompts in **5 languages**:
-  - 🇬🇧 English (`en`)
-  - 🇵🇱 Polish (`pl`)
-  - 🇺🇦 Ukrainian (`uk`)
-  - 🇩🇪 German (`de`)
-  - 🇧🇾 Belarusian (`be`)
-- **💾 Local SQLite Storage with WAL:** Persists all raw offers and AI appraisal outputs safely with WAL (Write-Ahead Logging) and concurrency-safe connection handling.
-
----
-
-## 🏗️ Architecture & Pipeline
-
-```text
-  [ OLX.pl iPhone Feed ]
-            │
-            ▼ (TLS Client - Chrome 120 Fingerprint / Proxy Pool)
-  [ Scraper & HTML Parser ]
-            │
-            ▼ (MD5 Page Fingerprint / Duplicate Check)
-  [ SQLite Deduplication ] ────► (Already analyzed? -> Skip)
-            │
-            ▼
-  [ Heuristic Filter ] ────► (Case / Box / Android detected? -> Discard)
-            │
-            ▼ (Threaded AI Queue)
-  [ DeepSeek API Analyzer ]
-            │
-            ├─► Auto-repair JSON & Pydantic Validation
-            ├─► Save to SQLite Database (`olx_iphones.db`)
-            └─► Push to Live Rich Dashboard & Log file
-```
-
----
-
-## 📦 Installation
-
-### 1. Prerequisites
-- Python **3.10** or newer installed.
-- DeepSeek API key (obtainable at [platform.deepseek.com](https://platform.deepseek.com/)).
-
-### 2. Clone and Setup Environment
+## Quick start
 
 ```bash
 git clone https://github.com/k4rror/olx-iphone-scanner.git
 cd olx-iphone-scanner
-
-# Create and activate virtual environment
 python -m venv .venv
-
-# On Linux/macOS:
-source .venv/bin/activate
-
-# On Windows (PowerShell):
-.venv\Scripts\Activate.ps1
-```
-
-### 3. Install Dependencies
-
-Install the project in editable mode with development tools:
-
-```bash
+source .venv/bin/activate          # Windows: .venv\Scripts\Activate.ps1
 pip install -e .
-```
-
-Or install dependencies directly:
-
-```bash
-pip install -r pyproject.toml
-```
-
----
-
-## 🚀 Quick Start
-
-### First Launch & Interactive Wizard
-
-Simply run the CLI entry point:
-
-```bash
 olx-scanner
 ```
 
-On your first run, the interactive configuration wizard will guide you through:
-1. Preferred interface and prompt language (`en`, `pl`, `uk`, `de`, `be`).
-2. DeepSeek API Key input.
-3. Connection mode (Direct TLS, Local Rotator on `127.0.0.1:8080`, or custom proxy list).
-4. Default scan depth (number of pages) and background watch mode settings.
+The first run starts an interactive wizard (language, DeepSeek API key, proxy mode, page count) and writes `scanner_config.json`. A DeepSeek API key is required.
 
-Configuration is saved automatically to `scanner_config.json`. You can re-run the wizard at any time:
+## Features
+
+- **TLS fingerprinting:** `tls-client` is configured with a Chrome 120 profile and emulated headers, so requests look like a normal browser without a CAPTCHA-solving service.
+- **Proxy pool:** proxy lists are tested asynchronously against OLX over HTTPS tunnels and ranked before the scan starts. A static proxy, a local rotator, or direct TLS are all supported.
+- **Heuristic pre-filter:** regex rules reject cases, boxes, chargers, spare parts and other brands (Samsung, Xiaomi, Pixel) before any DeepSeek request, which keeps token usage down.
+- **DeepSeek extraction:** each listing is parsed into typed fields (model, storage in GB, color, battery health percent, condition, damage details, Face ID, iCloud lock) plus a one-sentence verdict. Malformed JSON responses are repaired and validated with Pydantic.
+- **Deduplication and early stopping:** page fingerprints are computed from the MD5 hash of the listing IDs on that page. If page 1 is unchanged since the last cycle, or a later page adds zero new offers, the scan stops early.
+- **Terminal dashboard:** a Rich Live view with KPI counters, a table of recently analyzed offers, progress and a rolling event log. `--inline` disables the alternate screen buffer for CI or non-interactive shells.
+- **Web dashboard:** FastAPI and Jinja2 pages for scanner control, the offers table (filters, sorting, favorites, notes), analytics and CSV export.
+- **Storage:** SQLite in WAL mode with indexed columns, safe for concurrent writers.
+- **Internationalization:** UI strings and AI prompts in English, Polish, Ukrainian, German and Belarusian.
+
+## Installation
+
+### Requirements
+
+- Python 3.10 or newer.
+- A DeepSeek API key from [platform.deepseek.com](https://platform.deepseek.com/).
+- Network access to `olx.pl`.
+
+### Install
 
 ```bash
-olx-scanner --setup
+git clone https://github.com/k4rror/olx-iphone-scanner.git
+cd olx-iphone-scanner
+python -m venv .venv
+
+# Linux / macOS:
+source .venv/bin/activate
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+
+pip install -e .
 ```
 
----
+The base install includes the web dashboard dependencies (`fastapi`, `uvicorn`, `jinja2`). To run the test suite and linter as well:
 
-## ⚙️ Configuration
+```bash
+pip install -e ".[dev]"
+```
 
-### 1. Environment Variables (`.env`)
-You can store your API key in a `.env` file in the project root:
+## Usage
+
+### Terminal scanner
+
+```bash
+# Interactive wizard (first run, or after deleting scanner_config.json)
+olx-scanner
+
+# Re-run the wizard at any time
+olx-scanner --setup
+
+# One cycle over 3 pages in a chosen region, no prompts
+olx-scanner --non-interactive --pages 3 --region mazowieckie
+
+# Continuous monitoring: 5 pages, then wait 60 seconds and repeat
+olx-scanner --pages 5 --watch --interval 60
+
+# Force the interface and AI prompt language
+olx-scanner --lang pl
+
+# Proxy: a single endpoint, or a tested list from a file
+olx-scanner --proxy http://user:pass@127.0.0.1:8080
+olx-scanner --proxy-file proxies.txt --min-proxies 20
+
+# Non-interactive output for CI or logging
+olx-scanner --inline
+```
+
+Region may also be passed as `--wojewodztwo`. Accepted values are voivodeship slugs such as `mazowieckie`, `slaskie`, `malopolskie`; omit it to scan all of OLX Poland.
+
+### CLI options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--setup`, `--reconfigure` | Run the interactive setup wizard | `False` |
+| `--non-interactive`, `-y` | Skip pre-flight prompts and use the stored config | `False` |
+| `--lang` | Interface and prompt language (`en`, `pl`, `uk`, `de`, `be`) | config, else `pl` |
+| `--region`, `--wojewodztwo` | Voivodeship slug, e.g. `mazowieckie` | all regions |
+| `--api-key` | DeepSeek API key override | config / `.env` |
+| `--model` | DeepSeek model identifier | `deepseek-v4-flash-vision-exp` |
+| `--proxy` | Single static proxy (`http://host:port`) | `None` |
+| `--proxy-file`, `-pf` | Proxy list file (`.txt` or `.json`) | `None` |
+| `--min-proxies` | Minimum valid proxies required in the pool | `15` |
+| `--proxy-workers` | Threads used to verify proxies | `150` |
+| `--pages` | Search pages scanned per cycle | `3` |
+| `--threads` | Concurrent threads for AI analysis | `8` |
+| `--watch` | Repeat the scan in a loop | `False` |
+| `--interval` | Seconds between cycles in watch mode | `120` |
+| `--inline` | Scrolling output instead of the full-screen TUI | `False` |
+| `--log-file` | Execution log path | `olx_scanner.log` |
+
+### Web dashboard
+
+```bash
+olx-dashboard
+```
+
+This serves the dashboard on `http://127.0.0.1:8000` and opens it in the default browser. The entry point accepts:
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--host` | Bind address | `127.0.0.1` |
+| `--port` | Listening port | `8000` |
+| `--db` | Path to the SQLite database file | `olx_iphones.db` |
+| `--no-browser` | Do not open the browser on startup | `False` |
+
+Pages: `/scanner` (start/stop the scan), `/offers` (filter, sort, favorite, annotate, delete, export CSV), `/analytics` (per-model price statistics and margin over the market average).
+
+The dashboard exposes a JSON API over the same data. The main routes:
+
+| Method | Route | Purpose |
+| :--- | :--- | :--- |
+| `GET` | `/api/stats` | Database KPIs and analytics summary |
+| `GET` | `/api/offers` | Paged, filtered offer list |
+| `GET` | `/api/offers/{olx_id}` | Single offer details |
+| `POST` | `/api/offers/{olx_id}/favorite` | Toggle the favorite flag |
+| `PATCH` | `/api/offers/{olx_id}/notes` | Save user notes |
+| `DELETE` | `/api/offers/{olx_id}` | Delete an offer |
+| `GET` | `/api/export` | CSV export of the current filter |
+| `GET` | `/api/models/stats` | Price and battery statistics for a model |
+| `GET` | `/api/scanner/status` | Current scanner snapshot |
+| `POST` | `/api/scanner/start` | Start a scan cycle |
+| `POST` | `/api/scanner/stop` | Stop the running scan |
+| `GET` | `/api/scanner/probe` | Listing count and page count for a region |
+
+### Configuration
+
+`.env` in the project root:
 
 ```env
 DEEPSEEK_API_KEY=your_deepseek_api_key_here
+OLX_PROXY=
 ```
 
-### 2. `scanner_config.json`
-Generated by the wizard, customizable manually:
+`scanner_config.json`, written by the wizard and editable by hand:
 
 ```json
 {
-  "language": "en",
+  "language": "pl",
   "api_key": "your_deepseek_api_key_here",
   "model": "deepseek-v4-flash-vision-exp",
   "proxy_mode": "rotator",
   "custom_proxy": "http://127.0.0.1:8080",
   "proxy_file": null,
+  "region": "mazowieckie",
   "pages": 3,
   "threads": 8,
   "watch": false,
@@ -158,107 +176,52 @@ Generated by the wizard, customizable manually:
 }
 ```
 
----
+Command-line flags take precedence over the config file, which takes precedence over `.env`.
 
-## 💻 CLI Usage & Commands
+## Database schema
 
-### Basic Scan
-Scans the first 3 pages and exits:
-```bash
-olx-scanner --pages 3
-```
+SQLite, WAL mode, created automatically at `olx_iphones.db`.
 
-### Continuous Monitoring (Watch Mode)
-Scans 5 pages, analyzes new offers, and waits 60 seconds before scanning again:
-```bash
-olx-scanner --pages 5 --watch --interval 60
-```
+`iphone_offers`:
 
-### Change Language on the Fly
-Run the interface and prompt appraisals in Polish or Ukrainian:
-```bash
-olx-scanner --lang pl
-olx-scanner --lang uk
-```
+| Column | Notes |
+| :--- | :--- |
+| `id` | Primary key |
+| `olx_id` | Unique OLX listing ID, indexed |
+| `url`, `title`, `price`, `currency`, `location`, `posted_at`, `description`, `scraped_at` | Raw listing data |
+| `ai_analyzed` | `0` = pending, `1` = analyzed, indexed |
+| `model_name`, `storage_gb`, `color` | Normalized device data |
+| `battery_health_pct` | Integer, `NULL` when the seller did not state it |
+| `condition_state`, `is_damaged`, `damage_details` | Condition and defects, indexed on `is_damaged` |
+| `face_id_working`, `icloud_clean` | `1` / `0` / `NULL` |
+| `ai_summary` | One-sentence verdict |
+| `ai_raw_json` | Raw DeepSeek response |
+| `is_favorite`, `user_notes` | Added by the web dashboard |
 
-### Custom Proxy Configuration
-Use a static proxy or a list of proxies from a text/JSON file:
-```bash
-# Single proxy:
-olx-scanner --proxy http://user:pass@127.0.0.1:8080
+`scanned_pages`: `page_number`, `scanned_at`, `offers_total`, `new_offers`, `fingerprint` (MD5), `duration_s`. Used by the early-stopping check.
 
-# Proxy list file (tested automatically before scanning):
-olx-scanner --proxy-file proxies.txt --min-proxies 20
-```
-
-### Inline Mode (for CI/CD or Non-Interactive Terminals)
-Disables the alternate full-screen screen buffer:
-```bash
-olx-scanner --inline
-```
-
----
-
-## 📋 CLI Reference
-
-| Option | Flag | Description | Default |
-| :--- | :--- | :--- | :--- |
-| **Setup** | `--setup`, `--reconfigure` | Launch the initial interactive setup wizard | `False` |
-| **Language** | `--lang` | UI and AI language (`en`, `pl`, `uk`, `de`, `be`) | `en` |
-| **API Key** | `--api-key` | Override DeepSeek API Key | Config / `.env` |
-| **Model** | `--model` | DeepSeek model identifier | `deepseek-v4-flash-vision-exp` |
-| **Pages** | `--pages` | Number of OLX search pages to scan per cycle | `3` |
-| **Threads** | `--threads` | Concurrent threads for parallel AI analysis | `8` |
-| **Watch Mode** | `--watch` | Enable continuous polling loop | `False` |
-| **Interval** | `--interval` | Seconds to wait between cycles in watch mode | `120` |
-| **Proxy** | `--proxy` | Single static proxy (`http://host:port`) | `None` |
-| **Proxy File** | `--proxy-file`, `-pf`| Path to proxy list (`.txt` or `.json`) | `None` |
-| **Min Proxies**| `--min-proxies` | Minimum valid proxies required in pool | `15` |
-| **Proxy Workers** | `--proxy-workers` | Concurrency for initial proxy verification | `150` |
-| **Inline View**| `--inline` | Run in standard scrolling mode (no TUI alt screen) | `False` |
-| **Log File** | `--log-file` | Target file for comprehensive execution logs | `olx_scanner.log` |
-
----
-
-## 🗄️ Database Schema (`olx_iphones.db`)
-
-All scanned offers are stored in a local SQLite database with indexing and WAL mode enabled:
-
-- **`iphone_offers`**:
-  - `olx_id`: Unique OLX listing identifier.
-  - `title`, `price`, `location`, `posted_at`, `description`, `url`.
-  - `ai_analyzed`: Status flag (`0` = unanalyzed, `1` = analyzed).
-  - `model_name`: Extracted model (e.g., `iPhone 13 Pro`).
-  - `storage_gb`: Capacity (e.g., `128`, `256`).
-  - `battery_health_pct`: Battery percentage integer (or `NULL` if not stated).
-  - `condition_state`: Overall visual and technical condition.
-  - `is_damaged`: Boolean flag indicating damage.
-  - `damage_details`: Specific flaws (e.g., *"cracked rear glass, non-working Face ID"*).
-  - `face_id_working`: Boolean flag.
-  - `icloud_clean`: Boolean flag.
-  - `ai_summary`: 1-sentence appraiser summary verdict.
-  - `ai_raw_json`: Full JSON returned by DeepSeek.
-- **`scanned_pages`**: Tracks page numbers, timestamps, duration, and MD5 fingerprints for early-stopping optimization.
-
----
-
-## 🧪 Testing
-
-Run unit and parsing tests with `pytest`:
+## Testing
 
 ```bash
+pip install -e ".[dev]"
+ruff check .
 pytest tests/unit -v
 ```
 
----
+Unit tests run against fixtures and need no network access or API key. CI runs `ruff check .` and `pytest tests/unit/ -v` on Python 3.10, 3.11 and 3.12.
 
-## 🛡️ Best Practices & Notes
+## Limitations
 
-1. **Proxy Rotation:** If scanning dozens of pages frequently, use a proxy rotator (such as a local gateway at `http://127.0.0.1:8080`) or specify a working `--proxy-file` to prevent temporary rate limits on OLX.
-2. **DeepSeek API Usage:** Thanks to the built-in heuristic filter and page fingerprint deduplication, the scanner only sends actual, newly discovered iPhone listings to DeepSeek, minimizing your API token consumption.
+- The web dashboard runs a single scan cycle. Continuous watch mode is disabled in the web UI (`WATCH_MODE_ENABLED = False` in `src/olx_scanner/web/app.py`); use the CLI `--watch` flag instead.
+- State is a single local SQLite file. There is no server deployment, no authentication and no multi-user support; the dashboard binds to `127.0.0.1` by default.
+- The scraper depends on OLX HTML structure and will break when the markup changes. There is no offline mode or bundled dataset.
+- A paid DeepSeek API key is required for analysis. Listings are still stored without it, but stay unanalyzed.
+- This project is not affiliated with OLX. Respect the OLX terms of service and your local regulations when scraping.
 
----
+## Contributing
 
-## 📄 License
+Fork the repository, create a topic branch, and make sure `ruff check .` and `pytest tests/unit -v` pass before opening a pull request.
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
+## License
+
+MIT. See [LICENSE](LICENSE).
