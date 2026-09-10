@@ -1,10 +1,4 @@
-import pytest
-
 from olx_scanner.core.pricing import (
-    COST_PER_OFFER_OFFPEAK_USD,
-    COST_PER_OFFER_PESSIMISTIC_USD,
-    COST_PER_OFFER_STANDARD_USD,
-    COST_PER_PAGE_STANDARD_USD,
     ITEMS_PER_PAGE,
     calculate_deepseek_cost,
 )

@@ -243,24 +243,6 @@ async def stop_scanner() -> dict[str, Any]:
     return {"status": "success", "message": tl(get_language(), "api_stopping")}
 
 
-@app.get("/api/scanner/config")
-async def get_scanner_config() -> dict[str, Any]:
-    cfg = load_config() or {}
-    key = cfg.get("api_key", "")
-    masked_key = f"{key[:5]}...{key[-4:]}" if len(key) > 8 else (tl(get_language(), "api_key_configured") if key else "")
-    return {
-        "region": cfg.get("region"),
-        "pages": cfg.get("pages", 3),
-        "watch": cfg.get("watch", False),
-        "interval": cfg.get("interval", 120),
-        "threads": cfg.get("threads", 8),
-        "api_key_masked": masked_key,
-        "model": cfg.get("model", "deepseek-v4-flash-vision-exp"),
-        "custom_proxy": cfg.get("custom_proxy", ""),
-        "language": cfg.get("language", get_language()),
-    }
-
-
 @app.post("/api/scanner/config")
 async def save_scanner_config(payload: ScannerConfigRequest) -> dict[str, Any]:
     existing = load_config() or {}

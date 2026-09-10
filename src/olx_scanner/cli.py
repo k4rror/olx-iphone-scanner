@@ -20,7 +20,7 @@ from rich.table import Table
 
 from olx_scanner.ai.client import DeepSeekAnalyzer
 from olx_scanner.ai.heuristics import is_likely_iphone_offer
-from olx_scanner.core.config import init_environment, load_config
+from olx_scanner.core.config import init_environment
 from olx_scanner.core.regions import get_region_display_name, normalize_region
 from olx_scanner.i18n.translations import get_language, set_language, t
 from olx_scanner.scraper.client import TLSScraper

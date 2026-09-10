@@ -11,10 +11,9 @@ from typing import Any
 
 from olx_scanner.ai.client import DeepSeekAnalyzer
 from olx_scanner.ai.heuristics import is_likely_iphone_offer
-from olx_scanner.core.config import load_config, save_config
+from olx_scanner.core.config import load_config
 from olx_scanner.core.regions import get_region_display_name, normalize_region
 from olx_scanner.scraper.client import TLSScraper
-from olx_scanner.scraper.proxy import select_best_olx_proxies
 from olx_scanner.storage.database import Database
 
 ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")

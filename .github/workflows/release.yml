@@ -7,13 +7,27 @@ name: Release
 #   pierwsza linia komunikatu -> tytuł wydania
 #   reszta                     -> treść changelogu (markdown)
 #
-# Gdy tag nie ma komunikatu (albo jest to tag lekki), treść generuje GitHub
-# na podstawie commitów od poprzedniego wydania (--generate-notes).
+# Komunikat czytamy przez API GitHuba, a nie przez `git tag -l --format=...`:
+# actions/checkout materializuje tag jako referencję lekką (refs/tags/<tag>
+# wskazuje wprost na commit), więc %(contents:*) zwracałoby komunikat commita.
+#
+# Gdy tag nie ma komunikatu (albo jest lekki), treść generuje GitHub na
+# podstawie commitów od poprzedniego wydania (--generate-notes).
+#
+# Workflow jest idempotentny: gdy wydanie już istnieje, aktualizuje jego tytuł
+# i treść. Można go też uruchomić ręcznie (workflow_dispatch) z zakładki
+# Actions, podając tag — przydatne do poprawienia opisu wydania.
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag do opublikowania (np. v1.0.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -21,33 +35,62 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
-      - name: Checkout (pełna historia dla --generate-notes)
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Utwórz GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_name }}
+      - name: Odczytaj tytuł i treść z tagu
         run: |
           set -euo pipefail
 
-          TITLE=$(git tag -l --format='%(contents:subject)' "$TAG")
-          git tag -l --format='%(contents:body)' "$TAG" > "$RUNNER_TEMP/notes.md"
+          TITLE_FILE="$RUNNER_TEMP/title.txt"
+          NOTES_FILE="$RUNNER_TEMP/notes.md"
+          : > "$NOTES_FILE"
 
-          # Treść z tagu, jeśli nie jest pusta (same białe znaki się nie liczą).
-          if [ -n "$(tr -d '[:space:]' < "$RUNNER_TEMP/notes.md")" ]; then
-            echo "Treść changelogu pobrana z komunikatu tagu $TAG."
-            gh release create "$TAG" \
-              --title "${TITLE:-$TAG}" \
-              --notes-file "$RUNNER_TEMP/notes.md" \
-              --verify-tag
+          TYPE=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq .object.type)
+          echo "Typ obiektu w refs/tags/$TAG: $TYPE"
+
+          if [ "$TYPE" = "tag" ]; then
+            SHA=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq .object.sha)
+            FULL="$RUNNER_TEMP/tag-message.txt"
+            gh api "repos/$GITHUB_REPOSITORY/git/tags/$SHA" --jq .message > "$FULL"
+
+            head -n 1 "$FULL" > "$TITLE_FILE"
+            tail -n +2 "$FULL" | sed '/./,$!d' > "$NOTES_FILE"
+          fi
+
+          # Tytuł zapasowy, gdy tag nie ma komunikatu albo zaczyna się od pustej linii.
+          if [ ! -s "$TITLE_FILE" ]; then
+            printf '%s' "$TAG" > "$TITLE_FILE"
+          fi
+
+      - name: Opublikuj wydanie
+        run: |
+          set -euo pipefail
+
+          TITLE=$(cat "$RUNNER_TEMP/title.txt")
+          NOTES_FILE="$RUNNER_TEMP/notes.md"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            MODE="edit"
+            echo "Wydanie $TAG już istnieje – aktualizuję opis."
           else
-            echo "Tag $TAG bez komunikatu – generuję treść z commitów."
-            gh release create "$TAG" \
-              --title "$TAG" \
-              --generate-notes \
-              --verify-tag
+            MODE="create"
+            echo "Tworzę wydanie $TAG."
+          fi
+
+          if [ -n "$(tr -d '[:space:]' < "$NOTES_FILE")" ]; then
+            echo "Treść changelogu pochodzi z komunikatu tagu."
+            if [ "$MODE" = "edit" ]; then
+              gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
+            else
+              gh release create "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE" --verify-tag
+            fi
+          else
+            echo "Tag bez komunikatu – treść generuję z commitów."
+            if [ "$MODE" = "edit" ]; then
+              gh release edit "$TAG" --title "$TITLE"
+            else
+              gh release create "$TAG" --title "$TITLE" --generate-notes --verify-tag
+            fi
           fi

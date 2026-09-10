@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import sys
 from typing import Any
 
@@ -10,7 +9,7 @@ from rich.panel import Panel
 from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 
-from olx_scanner.core.config import load_config, save_config
+from olx_scanner.core.config import save_config
 from olx_scanner.core.pricing import (
     COST_PER_OFFER_STANDARD_USD,
     ITEMS_PER_PAGE,
