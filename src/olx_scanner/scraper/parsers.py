@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import unicodedata
 from collections.abc import Callable
 from typing import Any
+from urllib.parse import parse_qs, urlsplit
 
 from bs4 import BeautifulSoup
 
@@ -52,6 +54,86 @@ def parse_price(raw_text: str) -> float | None:
         return float(num_str)
     except ValueError:
         return None
+
+
+def link_is_promoted(href: str) -> bool:
+    """
+    Czy link ogłoszenia z listy OLX prowadzi do oferty sponsorowanej / „Wyróżnione”.
+
+    OLX oznacza linki parametrem ``search_reason``:
+      * ``search|promoted`` — ogłoszenie promowane (płatne),
+      * ``search|organic``  — wynik naturalny.
+
+    W HTML parametr bywa zakodowany procentowo (``search%7Cpromoted``), dlatego
+    wartość jest parsowana przez ``parse_qs``. Brak parametru traktujemy jako
+    ogłoszenie organiczne — nie pomijamy bez dowodu.
+    """
+    if not href:
+        return False
+    query = urlsplit(href).query
+    if not query:
+        return False
+    reasons = parse_qs(query).get("search_reason", [])
+    return any("promoted" in reason.lower() for reason in reasons)
+
+
+def extract_search_page_meta(html_text: str) -> tuple[int, int]:
+    """
+    Ekstraktuje całkowitą liczbę ogłoszeń oraz łączną liczbę stron dla zapytania.
+    Zwraca krotkę: (total_items, total_pages).
+    """
+    if not html_text:
+        return 0, 1
+
+    soup = BeautifulSoup(html_text, "html.parser")
+    total_items: int | None = None
+
+    # 1. Sprawdzenie JSON-a stanu osadzonego w skryptach strony
+    for script in soup.find_all("script"):
+        content = script.string or ""
+        if "total_elements" in content or "totalElements" in content:
+            m = re.search(r'"total_?elements":\s*(\d+)', content, re.IGNORECASE)
+            if m:
+                total_items = int(m.group(1))
+                break
+
+    # 2. Selektory specyficzne dla OLX (np. data-testid="total-count")
+    if total_items is None:
+        total_elem = soup.find(attrs={"data-testid": "total-count"}) or soup.find(attrs={"data-cy": "total-count"})
+        if total_elem:
+            raw_text = total_elem.get_text()
+            nums = re.findall(r"\d+", raw_text.replace("\xa0", "").replace(" ", ""))
+            if nums:
+                total_items = int(nums[0])
+
+    # 3. Fallback regex w treści strony (np. "Znaleźliśmy 1 458 ogłoszeń")
+    if total_items is None:
+        m = re.search(r"(?:znaleźliśmy|znaleziono|mamy)\s+(?:ponad\s+)?([\d\s\xa0]+)\s+ogłosze", html_text, re.IGNORECASE)
+        if m:
+            clean_digits = re.sub(r"\D", "", m.group(1))
+            if clean_digits:
+                total_items = int(clean_digits)
+
+    # 4. Fallback ostateczny: liczba kart ogłoszeń na bieżącej stronie
+    if total_items is None:
+        cards = soup.find_all("div", attrs={"data-cy": "l-card"})
+        total_items = len(cards)
+
+    # Obliczenie liczby stron na podstawie standardu OLX (52 ogłoszenia na stronę)
+    computed_pages = max(1, math.ceil(total_items / 52)) if total_items > 0 else 1
+
+    # Weryfikacja z linkami paginacji w HTML
+    max_page_in_html = 1
+    for a in soup.find_all("a", attrs={"data-cy": re.compile(r"page-link")}):
+        txt = a.get_text(strip=True)
+        if txt.isdigit():
+            max_page_in_html = max(max_page_in_html, int(txt))
+
+    total_pages = max(computed_pages, max_page_in_html)
+    # OLX ogranicza paginację dla zapytań do maksymalnie 25 stron
+    total_pages = min(total_pages, 25)
+
+    return total_items, total_pages
 
 
 def extract_full_offer_data_from_html(

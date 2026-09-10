@@ -9,10 +9,15 @@ import tls_client
 from bs4 import BeautifulSoup
 
 from olx_scanner.core.models import VerifiedProxy
-from olx_scanner.scraper.parsers import extract_full_offer_data_from_html, parse_price
+from olx_scanner.scraper.parsers import (
+    extract_full_offer_data_from_html,
+    extract_search_page_meta,
+    link_is_promoted,
+    parse_price,
+)
 
 TARGET_BASE_URL = "https://www.olx.pl"
-TARGET_SEARCH_URL = "https://www.olx.pl/elektronika/telefony/smartfony-telefony-komorkowe/q-iphone/"
+TARGET_CATEGORY_PATH = "/elektronika/telefony/smartfony-telefony-komorkowe"
 
 HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
@@ -53,13 +58,56 @@ class TLSScraper:
         self,
         verified_proxies: list[VerifiedProxy] | None = None,
         static_proxy: str | None = None,
+        region: str | None = None,
         logger: Callable[[str, str, str | None], None] | None = None,
     ) -> None:
         self.proxies: list[VerifiedProxy] = list(verified_proxies or [])
         self.static_proxy = static_proxy
+        self.region = region
         self.log = logger or (lambda msg, lvl="SCRAPE", idx=None: None)
         self._lock = threading.Lock()
         self._rr_index = 0
+    def probe_search_meta(self, region: str | None = None) -> tuple[int, int]:
+        """
+        Wysyła pojedyncze zapytanie rozpoznawcze, zwracając (total_items, total_pages).
+        """
+        old_region = self.region
+        self.region = region
+        url = self.get_search_url(page=1)
+        self.region = old_region
+
+        # 1. Próba przez proxy jeśli dostępne
+        proxy = self.get_proxy()
+        if proxy:
+            try:
+                session = create_tls_session(proxy)
+                resp = session.get(url, timeout_seconds=5, allow_redirects=True)
+                if resp.status_code == 200:
+                    return extract_search_page_meta(resp.text)
+            except Exception:
+                pass
+
+        # 2. Fallback Direct TLS
+        try:
+            session = create_tls_session(None)
+            resp = session.get(url, timeout_seconds=6, allow_redirects=True)
+            if resp.status_code == 200:
+                return extract_search_page_meta(resp.text)
+        except Exception:
+            pass
+
+        return 0, 1
+    
+    def get_search_url(self, page: int = 1) -> str:
+        """Kompiluje pełny URL wyszukiwania na OLX z uwzględnieniem województwa."""
+        if self.region:
+            base_url = f"{TARGET_BASE_URL}{TARGET_CATEGORY_PATH}/{self.region}/q-iphone/"
+        else:
+            base_url = f"{TARGET_BASE_URL}{TARGET_CATEGORY_PATH}/q-iphone/"
+
+        if page == 1:
+            return f"{base_url}?search%5Border%5D=created_at%3Adesc"
+        return f"{base_url}?page={page}&search%5Border%5D=created_at%3Adesc"
 
     def get_proxy(self) -> str | None:
         if self.static_proxy:
@@ -82,11 +130,7 @@ class TLSScraper:
                     break
 
     def fetch_page(self, page: int = 1) -> tuple[int, list[dict[str, Any]], str | None]:
-        url = (
-            f"{TARGET_SEARCH_URL}?search%5Border%5D=created_at%3Adesc"
-            if page == 1
-            else f"{TARGET_SEARCH_URL}?page={page}&search%5Border%5D=created_at%3Adesc"
-        )
+        url = self.get_search_url(page=page)
         idx_tag = f"PAGE-{page}"
 
         for _ in range(1, 4):
@@ -97,7 +141,7 @@ class TLSScraper:
                 session = create_tls_session(proxy)
                 response = session.get(url, timeout_seconds=5, allow_redirects=True)
                 if response.status_code == 200:
-                    offers = self._parse_html_cards(response.text)
+                    offers = self._parse_html_cards(response.text, idx=idx_tag)
                     if offers:
                         return 200, offers, proxy
                 self.mark_proxy_failed(proxy, idx=idx_tag)
@@ -109,7 +153,7 @@ class TLSScraper:
             session = create_tls_session(None)
             response = session.get(url, timeout_seconds=7, allow_redirects=True)
             if response.status_code == 200:
-                offers = self._parse_html_cards(response.text)
+                offers = self._parse_html_cards(response.text, idx=idx_tag)
                 return 200, offers, "Direct"
             return response.status_code, [], "Direct"
         except Exception as exc:
@@ -141,18 +185,26 @@ class TLSScraper:
 
         return extract_full_offer_data_from_html(html_text, logger=self.log, idx=idx)
 
-    def _parse_html_cards(self, html: str) -> list[dict[str, Any]]:
+    def _parse_html_cards(self, html: str, idx: str | None = None) -> list[dict[str, Any]]:
         soup = BeautifulSoup(html, "html.parser")
         offers = []
+        promoted_skipped = 0
         cards = soup.find_all("div", attrs={"data-cy": "l-card"})
         for card in cards:
             try:
+                # Pomijanie zewnętrznych slotów reklamowych (Google Ads) — na wszelki wypadek
+                if card.find_parent(attrs={"data-testid": re.compile(r"advert-slot")}):
+                    continue
                 olx_id = card.get("id")
                 title_link = card.find("a", attrs={"data-testid": "card-title-link"}) or card.find("a", href=re.compile(r"/d/oferta/"))
                 if not title_link:
                     continue
                 title = title_link.get_text(strip=True)
                 href = title_link.get("href", "")
+                # Pomijanie ogłoszeń sponsorowanych („Wyróżnione") — sygnał w search_reason
+                if link_is_promoted(href):
+                    promoted_skipped += 1
+                    continue
                 full_url = f"{TARGET_BASE_URL}{href}" if href.startswith("/") else href
                 clean_url = full_url.split("?")[0]
                 if not olx_id:
@@ -187,4 +239,10 @@ class TLSScraper:
                 })
             except Exception:
                 continue
+        if promoted_skipped:
+            self.log(
+                f"Pominięto {promoted_skipped} ogłoszeń sponsorowanych (Wyróżnione)",
+                "SCRAPE",
+                idx=idx,
+            )
         return offers
