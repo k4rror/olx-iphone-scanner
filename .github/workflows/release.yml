@@ -39,6 +39,13 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
+      # Wymagany przez `gh release create --verify-tag`, które uruchamia git
+      # w lokalnym repozytorium (bez tego: „fatal: not a git repository").
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
       - name: Odczytaj tytuł i treść z tagu
         run: |
           set -euo pipefail
@@ -47,11 +54,17 @@ jobs:
           NOTES_FILE="$RUNNER_TEMP/notes.md"
           : > "$NOTES_FILE"
 
-          TYPE=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq .object.type)
+          REF_URL="repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG"
+          if ! gh api "$REF_URL" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG nie istnieje w repozytorium. Wypchnij go: git push origin $TAG"
+            exit 1
+          fi
+
+          TYPE=$(gh api "$REF_URL" --jq .object.type)
           echo "Typ obiektu w refs/tags/$TAG: $TYPE"
 
           if [ "$TYPE" = "tag" ]; then
-            SHA=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq .object.sha)
+            SHA=$(gh api "$REF_URL" --jq .object.sha)
             FULL="$RUNNER_TEMP/tag-message.txt"
             gh api "repos/$GITHUB_REPOSITORY/git/tags/$SHA" --jq .message > "$FULL"
 
