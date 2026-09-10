@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ t('of_title') }} · {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1 class="page-title">
+      {{ t('of_title') }}
+      <span class="count-chip">
+        <span id="offers-total-badge">0</span>
+        <span class="lbl">{{ t('of_title') }}</span>
+      </span>
+    </h1>
+    <p class="page-sub">{{ t('of_eyebrow') }}</p>
+  </div>
+  <div class="page-head-actions">
+    <button onclick="fetchData(state.page)" class="btn btn-white btn-sm">
+      <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> {{ t('btn_refresh') }}
+    </button>
+    <a href="/api/export" class="btn btn-black btn-sm">
+      <i data-lucide="download" class="w-3.5 h-3.5"></i> {{ t('btn_export') }}
+    </a>
+  </div>
+</header>
+
+{% include "components/offer_filters.html" %}
+{% include "components/offer_table.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/offers.js"></script>
+{% endblock %}

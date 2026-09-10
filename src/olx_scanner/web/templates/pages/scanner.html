@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ t('sc_title') }} · {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1 class="page-title">{{ t('sc_title') }}</h1>
+    <p class="page-sub">{{ t('sc_eyebrow') }}</p>
+  </div>
+  <div class="page-head-actions">
+    <a href="/offers" class="btn btn-white btn-sm">
+      <i data-lucide="layout-list" class="w-3.5 h-3.5"></i> {{ t('btn_offers') }}
+    </a>
+  </div>
+</header>
+
+<!-- Kokpit: 1 ekran bez scrolla (xl). Lewa szyna = misja, prawa = budżet + konfiguracja -->
+<div class="grid grid-cols-12 gap-4 items-stretch xl:h-[calc(100dvh-231px)] xl:grid-rows-[auto_minmax(240px,1fr)]">
+  {% include "components/scanner_controls.html" %}
+  {% include "components/scanner_cost.html" %}
+  {% include "components/scanner_settings.html" %}
+  {% include "components/scanner_logs.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/scanner.js"></script>
+{% endblock %}

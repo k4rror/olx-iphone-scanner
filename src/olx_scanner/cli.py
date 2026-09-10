@@ -20,12 +20,14 @@ from rich.table import Table
 
 from olx_scanner.ai.client import DeepSeekAnalyzer
 from olx_scanner.ai.heuristics import is_likely_iphone_offer
-from olx_scanner.core.config import init_environment
+from olx_scanner.core.config import init_environment, load_config
+from olx_scanner.core.regions import get_region_display_name, normalize_region
 from olx_scanner.i18n.translations import get_language, set_language, t
 from olx_scanner.scraper.client import TLSScraper
 from olx_scanner.scraper.proxy import select_best_olx_proxies
 from olx_scanner.storage.database import Database
 from olx_scanner.ui.dashboard import render_dashboard
+from olx_scanner.ui.session_setup import run_session_configuration_flow
 from olx_scanner.ui.state import DashboardState
 from olx_scanner.ui.wizard import get_or_init_config
 
@@ -297,9 +299,11 @@ def print_final_summary(console: Console, db: Database) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="OLX iPhone Scanner with DeepSeek AI and Multi-language support.")
-    p.add_argument("--setup", "--reconfigure", action="store_true", help="Launch the interactive setup wizard")
+    p = argparse.ArgumentParser(description="OLX iPhone Scanner with DeepSeek AI and Voivodeship Cost Estimator.")
+    p.add_argument("--setup", "--reconfigure", action="store_true", help="Launch the full initial setup wizard")
+    p.add_argument("--non-interactive", "-y", action="store_true", help="Skip pre-flight prompts and use existing config")
     p.add_argument("--lang", choices=["en", "pl", "uk", "de", "be"], default=None, help="Force UI & prompt language")
+    p.add_argument("--region", "--wojewodztwo", default=None, help="Filter by voivodeship (e.g. mazowieckie, slaskie)")
     p.add_argument("--api-key", default=None, help="DeepSeek API Key override")
     p.add_argument("--model", default=None, help="DeepSeek model name")
     p.add_argument("--proxy", default=None, help="Static proxy URL override")
@@ -321,15 +325,45 @@ def main() -> int:
     args = parse_args()
     console = Console()
 
+    # 1. Weryfikacja pliku konfiguracyjnego lub uruchomienie kreatora przy pierwszym starcie
     cfg = get_or_init_config(force_setup=args.setup, console=console)
 
-    chosen_lang = args.lang or cfg.get("language", "en")
+    chosen_lang = args.lang or cfg.get("language", "pl")
     set_language(chosen_lang)
+
+    # 2. Inicjalizacja połączenia sieciowego (proxy / direct)
+    proxy_val = args.proxy if args.proxy is not None else cfg.get("custom_proxy")
+    proxy_file_val = args.proxy_file if args.proxy_file is not None else cfg.get("proxy_file")
+
+    verified_proxies = []
+    if not proxy_val:
+        verified_proxies = select_best_olx_proxies(
+            custom_file=proxy_file_val,
+            min_working=args.min_proxies,
+            max_workers=args.proxy_workers,
+            console=console,
+            logger=app_logger,
+        )
+
+    scraper = TLSScraper(
+        verified_proxies=verified_proxies,
+        static_proxy=proxy_val,
+        region=None,
+        logger=app_logger,
+    )
+
+    # 3. INTERAKTYWNA KONFIGURACJA SESJI PRZED STARTEM
+    # Poprawiono odwołanie do atrybutu: args.non_interactive (zamiast błędnego args.non-interactive)
+    if not args.non_interactive and not args.pages and not args.region:
+        cfg = run_session_configuration_flow(console=console, scraper=scraper, existing_cfg=cfg)
+
+    # 4. Mapowanie parametrów po konfiguracji
+    raw_region = args.region if args.region is not None else cfg.get("region")
+    normalized_reg = normalize_region(raw_region)
+    display_reg = get_region_display_name(normalized_reg, default_label=t("region_all"))
 
     api_key = args.api_key or cfg.get("api_key") or os.getenv("DEEPSEEK_API_KEY", "")
     model_name = args.model or cfg.get("model") or "deepseek-v4-flash-vision-exp"
-    proxy_val = args.proxy if args.proxy is not None else cfg.get("custom_proxy")
-    proxy_file_val = args.proxy_file if args.proxy_file is not None else cfg.get("proxy_file")
     pages_count = args.pages if args.pages is not None else cfg.get("pages", 3)
     threads_count = args.threads if args.threads is not None else cfg.get("threads", 8)
     watch_mode = args.watch or cfg.get("watch", False)
@@ -342,11 +376,17 @@ def main() -> int:
     args.model = model_name
     args.proxy = proxy_val
     args.proxy_file = proxy_file_val
+    args.region = normalized_reg
+
+    scraper.region = normalized_reg
 
     LOG_FILE_PATH = Path(args.log_file)
     try:
         with open(LOG_FILE_PATH, "a", encoding="utf-8") as f:
-            f.write(f"\n{'='*75}\n=== START OLX SCANNER [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Lang: {get_language()} ===\n{'='*75}\n")
+            f.write(
+                f"\n{'='*75}\n=== START OLX SCANNER [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] "
+                f"Lang: {get_language()} Region: {display_reg} Pages: {args.pages} ===\n{'='*75}\n"
+            )
     except Exception:
         pass
 
@@ -356,21 +396,11 @@ def main() -> int:
 
     signal.signal(signal.SIGINT, sigint_handler)
 
-    verified_proxies = []
-    if not args.proxy:
-        verified_proxies = select_best_olx_proxies(
-            custom_file=args.proxy_file,
-            min_working=args.min_proxies,
-            max_workers=args.proxy_workers,
-            console=console,
-            logger=app_logger,
-        )
-
-    scraper = TLSScraper(verified_proxies=verified_proxies, static_proxy=args.proxy, logger=app_logger)
     ai = DeepSeekAnalyzer(api_key=api_key, model=args.model, language=chosen_lang, logger=app_logger)
     db = Database("olx_iphones.db", logger=app_logger)
 
     GLOBAL_STATE.model_name = args.model
+    GLOBAL_STATE.region_name = display_reg
     GLOBAL_STATE.proxy_count = len(verified_proxies) if verified_proxies else (1 if args.proxy else 0)
     GLOBAL_STATE.current_status = t("status_init")
     GLOBAL_STATE.progress_label = t("waiting_label")

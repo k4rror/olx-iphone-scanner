@@ -1,0 +1,39 @@
+<section class="card flex flex-col overflow-hidden col-span-12 xl:col-span-8 xl:row-start-2 xl:min-h-0">
+  <div class="px-4 py-2.5 border-b border-line flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+    <h3 class="panel-title">
+      <span class="w-6 h-6 rounded-md bg-zinc-100 border border-zinc-200/70 grid place-items-center">
+        <i data-lucide="terminal" class="w-3 h-3 text-zinc-600"></i>
+      </span>
+      {{ t('log_title') }}
+      <span id="log-count" class="chip chip-gray font-mono tabular-nums ml-1">0</span>
+    </h3>
+    <div class="flex items-center gap-1.5">
+      <select id="log-level-filter" onchange="setLogFilter(this.value)" class="select select-sm w-auto" aria-label="{{ t('log_all') }}">
+        <option value="ALL">{{ t('log_all') }}</option>
+        <option value="SUCCESS">{{ t('log_success') }}</option>
+        <option value="SMART">{{ t('log_smart') }}</option>
+        <option value="AI">{{ t('log_ai') }}</option>
+        <option value="WARN">{{ t('log_warn') }}</option>
+        <option value="ERROR">{{ t('log_error') }}</option>
+      </select>
+      <button id="btn-autoscroll" onclick="toggleAutoScroll()" class="btn btn-black btn-xs">
+        <i data-lucide="arrow-down-to-line" class="w-3 h-3"></i> {{ t('log_auto') }}
+      </button>
+      <button onclick="clearLogs()" class="icon-btn !w-[26px] !h-[26px]" title="{{ t('log_clear') }}" aria-label="{{ t('log_clear') }}">
+        <i data-lucide="eraser" class="w-3 h-3"></i>
+      </button>
+    </div>
+  </div>
+
+  <div id="live-current-offer-box" class="hidden mx-3 mt-3 mb-0 px-3 py-2 rounded-lg bg-violet-50 border border-violet-100 flex items-center justify-between gap-3 text-[11.5px]">
+    <span class="flex items-center gap-2 min-w-0">
+      <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-violet-600 shrink-0"></i>
+      <span id="live-current-offer-title" class="font-semibold text-violet-900 truncate">{{ t('log_analyzing') }}</span>
+    </span>
+    <span class="chip chip-grape shrink-0"><i data-lucide="sparkles" class="w-2.5 h-2.5"></i> DeepSeek AI</span>
+  </div>
+
+  <div id="scanner-logs-container" class="terminal logs-body mx-3 mb-3 mt-2 grow basis-0">
+    <div class="log-empty">{{ t('log_empty') }}</div>
+  </div>
+</section>

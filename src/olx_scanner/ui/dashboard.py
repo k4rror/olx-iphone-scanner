@@ -28,6 +28,8 @@ def render_dashboard(state: DashboardState, console_size: ConsoleDimensions) -> 
             (" │ ", "dim white on #1e3799"),
             (f"{t('tag_model')}: {state.model_name}", "bold yellow on #1e3799"),
             (" │ ", "dim white on #1e3799"),
+            (f"📍 {t('tag_region')}: {state.region_name}", "bold white on #1e3799"),
+            (" │ ", "dim white on #1e3799"),
             (f"{t('tag_proxy')}: {state.proxy_count}", "bold cyan on #1e3799"),
             (" │ ", "dim white on #1e3799"),
             (f"{t('tag_cycle')}: #{state.cycle_index}", "bold green on #1e3799"),

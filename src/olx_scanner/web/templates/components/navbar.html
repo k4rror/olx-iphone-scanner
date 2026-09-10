@@ -1,0 +1,47 @@
+<header class="topbar">
+  <a href="/scanner" class="brand shrink-0">
+    <span class="brand-mark" aria-hidden="true">
+      <i data-lucide="smartphone" class="w-[15px] h-[15px]"></i>
+      <span class="brand-pulse"></span>
+    </span>
+    <span class="hidden sm:block leading-none">
+      <span class="block text-[14.5px] font-bold tracking-[-0.01em] text-ink">{{ t('app_name') }}</span>
+      <span class="block text-[10px] text-faint mt-[3px] font-medium">{{ t('app_tagline') }}</span>
+    </span>
+  </a>
+
+  <nav class="nav-pills order-3 lg:order-2 w-full lg:w-auto" aria-label="Primary">
+    <a href="/scanner" class="nav-pill {% if active_page == 'scanner' %}active{% endif %}">
+      <i data-lucide="radar" class="w-[15px] h-[15px]"></i><span>{{ t('nav_scanner') }}</span>
+    </a>
+    <a href="/offers" class="nav-pill {% if active_page == 'offers' %}active{% endif %}">
+      <i data-lucide="layout-list" class="w-[15px] h-[15px]"></i><span>{{ t('nav_offers') }}</span>
+    </a>
+    <a href="/analytics" class="nav-pill {% if active_page == 'analytics' %}active{% endif %}">
+      <i data-lucide="bar-chart-3" class="w-[15px] h-[15px]"></i><span>{{ t('nav_analytics') }}</span>
+    </a>
+  </nav>
+
+  <div class="flex items-center gap-2 order-2 lg:order-3">
+    <div class="relative" id="lang-picker-wrapper">
+      <button id="lang-picker-btn" onclick="toggleLangMenu()" class="status-chip cursor-pointer" title="{{ t('nav_language') }}" aria-haspopup="true" aria-expanded="false">
+        <i data-lucide="globe" class="w-[14px] h-[14px] text-muted"></i>
+        <span class="font-bold uppercase text-[10.5px] tracking-wide">{{ current_lang }}</span>
+      </button>
+      <div id="lang-dropdown" class="hidden absolute right-0 mt-2 w-52 bg-white border border-line rounded-lg shadow-lift py-1.5 z-50">
+        {% for code, name in languages.items() %}
+        <button onclick="switchLanguage('{{ code }}')" class="w-full text-left px-3.5 py-2 text-xs font-medium hover:bg-paper flex items-center justify-between gap-2 {% if code == current_lang %}text-ink font-semibold{% endif %}">
+          <span class="truncate">{{ name }}</span>
+          {% if code == current_lang %}<i data-lucide="check" class="w-3.5 h-3.5 text-mint-600 shrink-0"></i>{% endif %}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <span id="nav-scanner-status" class="status-chip"><span class="dot"></span>{{ t('st_idle') }}</span>
+    <a href="/api/export" class="icon-btn" title="{{ t('nav_export') }}"><i data-lucide="download" class="w-[15px] h-[15px]"></i></a>
+    <a href="https://www.olx.pl/elektronika/telefony/q-iphone/" target="_blank" rel="noopener" class="icon-btn hidden lg:grid" title="{{ t('nav_open_olx') }}">
+      <i data-lucide="external-link" class="w-[15px] h-[15px]"></i>
+    </a>
+  </div>
+</header>

@@ -1,0 +1,68 @@
+<section class="card filter-bar">
+  <div class="filter-row1">
+    <!-- Wyszukiwarka -->
+    <div class="relative field-with-icon min-w-0">
+      <span class="field-icon"><i data-lucide="search" class="w-3.5 h-3.5"></i></span>
+      <input type="text" id="filter-q" placeholder="{{ t('f_search_ph') }}" oninput="debounceFetch()" class="input" autocomplete="off" />
+    </div>
+
+    <!-- Model -->
+    <div>
+      <select id="filter-model" onchange="fetchData(1)" class="select" aria-label="{{ t('f_all_models') }}">
+        <option value="ALL">{{ t('f_all_models') }}</option>
+      </select>
+    </div>
+
+    <!-- Zakres ceny -->
+    <div class="flex items-center gap-1 h-8 border border-line rounded-full bg-white px-2 focus-within:border-ink focus-within:shadow-[0_0_0_3px_rgba(24,24,27,.06)] transition-shadow">
+      <i data-lucide="wallet" class="w-3.5 h-3.5 text-faint shrink-0 ml-1.5"></i>
+      <input type="number" id="filter-min-price" placeholder="{{ t('f_price_from') }}" onchange="fetchData(1)" class="w-[74px] bg-transparent text-xs font-mono font-medium text-center outline-none placeholder:text-faint placeholder:font-sans" min="0" />
+      <span class="text-faint select-none">—</span>
+      <input type="number" id="filter-max-price" placeholder="{{ t('f_price_to') }}" onchange="fetchData(1)" class="w-[74px] bg-transparent text-xs font-mono font-medium text-center outline-none placeholder:text-faint placeholder:font-sans" min="0" />
+    </div>
+
+    <!-- Sortowanie -->
+    <div>
+      <select id="filter-sort" onchange="fetchData(1)" class="select" aria-label="{{ t('sort_newest') }}">
+        <option value="newest">{{ t('sort_newest') }}</option>
+        <option value="margin_desc">Największa marża (PLN)</option>
+        <option value="margin_pct_desc">Największa marża (%)</option>
+        <option value="price_asc">{{ t('sort_price_asc') }}</option>
+        <option value="price_desc">{{ t('sort_price_desc') }}</option>
+        <option value="battery_desc">{{ t('sort_battery') }}</option>
+      </select>
+    </div>
+
+    <!-- Minimalna marża -->
+    <div class="relative">
+      <input type="number" id="filter-min-margin" placeholder="Min. marża" onchange="fetchData(1)" class="input font-mono text-xs pr-9" min="0" title="Tylko oferty z marżą co najmniej tej wysokości (PLN)" />
+      <span class="field-suffix">zł</span>
+    </div>
+  </div>
+
+  <div class="filter-row2">
+    <label class="toggle-chip" title="{{ t('f_fav') }}">
+      <input type="checkbox" id="filter-fav-only" onchange="fetchData(1)" />
+      <i data-lucide="star" class="w-3.5 h-3.5"></i> {{ t('f_fav') }}
+    </label>
+    <label class="toggle-chip" title="{{ t('f_analyzed') }}">
+      <input type="checkbox" id="filter-analyzed-only" onchange="fetchData(1)" />
+      <i data-lucide="brain" class="w-3.5 h-3.5"></i> {{ t('f_analyzed') }}
+    </label>
+    <label class="toggle-chip" title="Tylko okazje: oferty poniżej średniej rynkowej modelu (marża &gt; 0)">
+      <input type="checkbox" id="filter-deals-only" onchange="fetchData(1)" />
+      <i data-lucide="trending-up" class="w-3.5 h-3.5 ic-deal"></i> Tylko okazje
+    </label>
+
+    <span class="segmented w-auto text-xs" id="filter-damaged-seg">
+      <label><input type="radio" name="filter-damaged-r" value="ALL" checked onchange="setDamagedFilter(this.value)" /><span class="seg-dot"></span>{{ t('f_all') }}</label>
+      <label><input type="radio" name="filter-damaged-r" value="false" onchange="setDamagedFilter(this.value)" /><span class="seg-dot"></span>{{ t('f_healthy') }}</label>
+      <label><input type="radio" name="filter-damaged-r" value="true" onchange="setDamagedFilter(this.value)" /><span class="seg-dot"></span>{{ t('f_damaged') }}</label>
+    </span>
+    <input type="hidden" id="filter-damaged" value="ALL" />
+
+    <button onclick="resetFilters()" class="btn btn-white btn-xs ml-auto" title="{{ t('btn_reset_filters') }}">
+      <i data-lucide="rotate-ccw" class="w-3 h-3"></i> {{ t('btn_reset_filters') }}
+    </button>
+  </div>
+</section>

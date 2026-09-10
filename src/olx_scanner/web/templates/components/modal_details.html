@@ -1,0 +1,96 @@
+<div id="details-modal" class="modal" onclick="if (event.target === this) closeDetailsModal()" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-[10px] font-semibold text-faint tracking-wide">{{ t('m_eyebrow') }}</span>
+          <span id="modal-state" class="chip chip-gray">–</span>
+        </div>
+        <h2 id="modal-title" class="text-[17px] font-bold tracking-[-0.01em] truncate leading-tight">–</h2>
+        <div id="modal-sub" class="text-[10.5px] text-faint mt-1 font-mono">ID: –</div>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button id="modal-fav-btn" onclick="toggleModalFavorite()" class="icon-btn star-btn" title="{{ t('a_fav') }}" aria-label="{{ t('a_fav') }}">
+          <i data-lucide="star" class="w-3.5 h-3.5"></i>
+        </button>
+        <button onclick="closeDetailsModal()" class="icon-btn" title="{{ t('m_close_hint') }}" aria-label="{{ t('m_close_hint') }}">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-body space-y-4">
+      <!-- Kluczowe parametry -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div class="stat-tile">
+          <span class="text-[10px] font-semibold text-faint">{{ t('m_price') }}</span>
+          <div id="modal-price" class="v font-mono">–</div>
+        </div>
+        <div class="stat-tile">
+          <span class="text-[10px] font-semibold text-faint">{{ t('m_battery') }}</span>
+          <div id="modal-battery" class="v">–</div>
+        </div>
+        <div class="stat-tile">
+          <span class="text-[10px] font-semibold text-faint">{{ t('m_faceid') }}</span>
+          <div id="modal-faceid" class="v text-lg">–</div>
+        </div>
+        <div class="stat-tile">
+          <span class="text-[10px] font-semibold text-faint">{{ t('m_icloud') }}</span>
+          <div id="modal-icloud" class="v text-lg">–</div>
+        </div>
+      </div>
+
+      <!-- Wycena rynkowa vs. cena oferty -->
+      <div id="modal-market-strip" class="market-strip hidden">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="w-6 h-6 rounded-md bg-emerald-50 border border-emerald-100 grid place-items-center shrink-0">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-emerald-600"></i>
+          </span>
+          <div class="min-w-0">
+            <span class="block text-[10px] font-semibold text-faint">Średnia rynkowa modelu</span>
+            <b id="modal-market-avg" class="font-mono text-[13px] text-ink tabular-nums">–</b>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] text-muted">Szacowana marża:</span>
+          <span id="modal-market-margin" class="chip chip-gray font-mono text-xs font-bold">–</span>
+        </div>
+      </div>
+
+      <!-- Werdykt AI -->
+      <div class="card-dark glow-ai p-4">
+        <div class="flex items-center justify-between gap-3 mb-1.5">
+          <span class="text-[10px] font-bold tracking-[.08em] uppercase text-white/50 flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-3 h-3 text-violet-400"></i> {{ t('m_verdict') }}
+          </span>
+          <span id="modal-condition" class="chip bg-white/10 text-white border-white/15">–</span>
+        </div>
+        <p id="modal-verdict" class="text-[12.5px] leading-relaxed text-white/90">–</p>
+      </div>
+
+      <!-- Notatki -->
+      <div>
+        <label class="label" for="modal-notes">{{ t('m_notes') }}</label>
+        <textarea id="modal-notes" class="textarea" rows="2" placeholder="{{ t('m_notes_ph') }}"></textarea>
+        <div class="flex justify-end mt-1.5">
+          <button onclick="saveModalNotes()" class="btn btn-black btn-sm">
+            <i data-lucide="save" class="w-3 h-3"></i> {{ t('btn_save_note') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Pełny opis ogłoszenia -->
+      <div>
+        <span class="label">{{ t('m_description') }}</span>
+        <div id="modal-description" class="subcard p-3.5 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-zinc-600 max-h-52 overflow-y-auto rounded-lg"></div>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <a id="modal-olx-link" href="#" target="_blank" rel="noopener" class="btn btn-white btn-sm">
+        {{ t('m_open_olx') }} <i data-lucide="external-link" class="w-3 h-3"></i>
+      </a>
+      <button onclick="closeDetailsModal()" class="btn btn-black btn-sm">{{ t('btn_close') }}</button>
+    </div>
+  </div>
+</div>

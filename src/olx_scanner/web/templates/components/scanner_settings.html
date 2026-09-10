@@ -1,0 +1,89 @@
+<section class="card flex flex-col overflow-hidden col-span-12 xl:col-span-4 xl:col-start-9 xl:row-start-2 xl:min-h-0">
+  <div class="px-4 py-2.5 border-b border-line flex items-center justify-between gap-3 shrink-0">
+    <h3 class="panel-title">
+      <span class="w-6 h-6 rounded-md bg-zinc-100 border border-zinc-200/70 grid place-items-center">
+        <i data-lucide="sliders-horizontal" class="w-3 h-3 text-zinc-600"></i>
+      </span>
+      {{ t('set_title') }}
+    </h3>
+    <button onclick="saveScannerSettings()" class="btn btn-black btn-xs shrink-0">
+      <i data-lucide="save" class="w-3 h-3"></i> {{ t('btn_save_settings') }}
+    </button>
+  </div>
+
+  <!-- Zakres skanowania -->
+  <div class="p-4 pt-3.5 space-y-3.5 grow min-h-0 overflow-y-auto">
+    <div>
+      <label class="label" for="cfg-region">{{ t('set_region') }}</label>
+      <select id="cfg-region" onchange="onRegionChange()" class="select">
+        <option value="ALL">{{ t('set_region_all') }}</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="flex justify-between items-center mb-2">
+        <label class="label !mb-0" for="cfg-pages">{{ t('set_pages') }}</label>
+        <span id="cfg-pages-val" class="chip chip-gray font-mono tabular-nums">3</span>
+      </div>
+      <input type="range" id="cfg-pages" class="range" min="1" max="25" value="3" oninput="onPagesSlider(this.value)" />
+      <div class="flex justify-between text-[10px] text-faint mt-2 font-mono">
+        <span>1</span>
+        <span id="probe-items-scan">≈ 156</span>
+        <span id="cfg-pages-max">25</span>
+      </div>
+    </div>
+
+    <div>
+      <label class="label">{{ t('set_mode') }}</label>
+      <div class="segmented w-full">
+        <label>
+          <input type="radio" name="cfg-mode" id="cfg-mode-single" value="single" checked onchange="toggleWatchOptions(false)" />
+          <i data-lucide="zap" class="w-3 h-3"></i> {{ t('mode_single') }}
+        </label>
+        {# Tryb „Monitoring" tymczasowo wyłączony – patrz WATCH_MODE_ENABLED (app.py / scanner.js) #}
+        <label class="is-disabled" title="{{ t('api_watch_disabled') }}">
+          <input type="radio" name="cfg-mode" id="cfg-mode-watch" value="watch" disabled onchange="toggleWatchOptions(true)" />
+          <i data-lucide="eye" class="w-3 h-3"></i> {{ t('mode_watch') }}
+        </label>
+      </div>
+    </div>
+
+    <div id="cfg-interval-container" class="hidden">
+      <label class="label" for="cfg-interval">{{ t('set_interval') }}</label>
+      <input type="number" id="cfg-interval" class="input font-mono" value="120" min="10" max="3600" />
+    </div>
+
+    <div>
+      <label class="label" for="cfg-threads">{{ t('set_threads') }}</label>
+      <input type="number" id="cfg-threads" class="input font-mono" value="8" min="1" max="24" />
+    </div>
+
+    <!-- Analiza AI i połączenie -->
+    <div class="border-t border-line-soft pt-3.5 space-y-3.5">
+      <div>
+        <label class="label" for="cfg-ai-lang">{{ t('set_ai_lang') }}</label>
+        <select id="cfg-ai-lang" class="select">
+          <option value="pl">Polski</option>
+          <option value="en">English</option>
+          <option value="uk">Українська</option>
+          <option value="de">Deutsch</option>
+          <option value="be">Беларуская</option>
+        </select>
+      </div>
+
+      <div class="subcard p-3 space-y-3">
+        <div>
+          <label class="label" for="cfg-api-key">{{ t('set_api_key') }}</label>
+          <input type="password" id="cfg-api-key" class="input font-mono" autocomplete="off" placeholder="{{ t('set_api_key_ph') }}" />
+          <div id="cfg-api-key-status" class="text-[10.5px] text-muted mt-1.5 flex items-center gap-1.5">
+            <i data-lucide="key-round" class="w-3 h-3"></i> {{ t('set_api_loading') }}
+          </div>
+        </div>
+        <div>
+          <label class="label" for="cfg-proxy">{{ t('set_proxy') }} <span class="text-faint font-normal">{{ t('optional') }}</span></label>
+          <input type="text" id="cfg-proxy" class="input font-mono text-xs" placeholder="http://user:pass@host:port" />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,88 @@
+<section class="card overflow-hidden flex flex-col col-span-12 xl:col-span-8 xl:row-start-1">
+  <!-- Stan + akcje -->
+  <div class="px-5 pt-4 pb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex items-center gap-3 min-w-0">
+      <span id="scanner-indicator-dot" class="ind shrink-0" aria-hidden="true"></span>
+      <div class="min-w-0 grow">
+        <div class="flex items-center gap-2 min-w-0">
+          <h2 id="scanner-state-title" class="text-[16px] font-bold tracking-[-0.01em] truncate leading-snug">{{ t('sc_idle_title') }}</h2>
+          <span id="scanner-status-pill" class="chip chip-gray shrink-0">IDLE</span>
+        </div>
+        <p id="scanner-state-desc" class="text-[11px] text-muted mt-0.5 truncate">
+          {{ t('sc_desc_idle') }}
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 shrink-0">
+      <span id="scanner-cycle-badge" class="chip chip-outline font-mono tabular-nums">{{ t('sc_cycle', n=1) }}</span>
+      <button id="btn-start-scanner" onclick="startScanner()" class="btn btn-black">
+        <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+        {{ t('btn_start') }}
+      </button>
+      <button id="btn-stop-scanner" onclick="stopScanner()" disabled class="btn btn-stop">
+        <i data-lucide="square" class="w-3 h-3 fill-current"></i> {{ t('btn_stop') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Postęp -->
+  <div class="px-5 pb-4 mt-auto">
+    <div class="flex items-center justify-between gap-3 mb-2">
+      <span id="scanner-progress-label" class="text-[11.5px] font-semibold text-ink truncate">{{ t('progress_idle') }}</span>
+      <div class="flex items-center gap-2 shrink-0">
+        <span id="scanner-countdown" class="chip chip-sun hidden">
+          <i data-lucide="timer" class="w-3 h-3"></i><span>0s</span>
+        </span>
+        <span id="scanner-progress-pct" class="font-mono text-[11px] font-semibold tabular-nums text-muted">0%</span>
+      </div>
+    </div>
+    <div class="progress"><div id="scanner-progress-bar"></div></div>
+  </div>
+
+  <!-- Telemetria sesji – wbudowana stopka karty -->
+  <div class="kpi-strip kpi-dock">
+    <div class="kpi-cell">
+      <span class="kpi-cell-ico bg-ink text-white"><i data-lucide="sparkles" class="w-3 h-3"></i></span>
+      <span class="min-w-0">
+        <span class="kpi-cell-label">{{ t('kpi_found') }}</span>
+        <span id="metric-session-found" class="kpi-cell-val text-ink">0</span>
+      </span>
+    </div>
+    <div class="kpi-cell">
+      <span class="kpi-cell-ico bg-violet-50 text-violet-700 border border-violet-100"><i data-lucide="brain" class="w-3 h-3"></i></span>
+      <span class="min-w-0">
+        <span class="kpi-cell-label">{{ t('kpi_ai') }}</span>
+        <span id="metric-session-analyzed" class="kpi-cell-val text-violet-700">0</span>
+      </span>
+    </div>
+    <div class="kpi-cell">
+      <span class="kpi-cell-ico bg-emerald-50 text-emerald-700 border border-emerald-100"><i data-lucide="shield-check" class="w-3 h-3"></i></span>
+      <span class="min-w-0">
+        <span class="kpi-cell-label">{{ t('kpi_ok') }}</span>
+        <span id="metric-session-healthy" class="kpi-cell-val text-emerald-700">0</span>
+      </span>
+    </div>
+    <div class="kpi-cell">
+      <span class="kpi-cell-ico bg-rose-50 text-rose-700 border border-rose-100"><i data-lucide="alert-triangle" class="w-3 h-3"></i></span>
+      <span class="min-w-0">
+        <span class="kpi-cell-label">{{ t('kpi_dmg') }}</span>
+        <span id="metric-session-damaged" class="kpi-cell-val text-rose-700">0</span>
+      </span>
+    </div>
+    <div class="kpi-cell">
+      <span class="kpi-cell-ico bg-amber-50 text-amber-700 border border-amber-100"><i data-lucide="copy" class="w-3 h-3"></i></span>
+      <span class="min-w-0">
+        <span class="kpi-cell-label">{{ t('kpi_dups') }}</span>
+        <span id="metric-session-dups" class="kpi-cell-val text-amber-700">0</span>
+      </span>
+    </div>
+    <div class="kpi-cell">
+      <span class="kpi-cell-ico bg-zinc-100 text-zinc-500 border border-zinc-200/60"><i data-lucide="filter-x" class="w-3 h-3"></i></span>
+      <span class="min-w-0">
+        <span class="kpi-cell-label">{{ t('kpi_acc') }}</span>
+        <span id="metric-session-acc" class="kpi-cell-val text-zinc-500">0</span>
+      </span>
+    </div>
+  </div>
+</section>

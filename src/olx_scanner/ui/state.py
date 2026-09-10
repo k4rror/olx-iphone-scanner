@@ -21,6 +21,7 @@ class ActivityEvent:
 @dataclass
 class DashboardState:
     model_name: str = "DeepSeek"
+    region_name: str = "Cała Polska"
     proxy_count: int = 0
     total_offers_db: int = 0
     analyzed_offers_db: int = 0

@@ -9,6 +9,7 @@ from rich.panel import Panel
 from rich.prompt import Confirm, IntPrompt, Prompt
 
 from olx_scanner.core.config import load_config, save_config
+from olx_scanner.core.regions import VOIVODESHIPS, normalize_region
 from olx_scanner.i18n.translations import set_language, t
 
 
@@ -72,6 +73,13 @@ def run_initial_setup_wizard(console: Console | None = None) -> dict[str, Any]:
             proxy_mode = "custom"
             custom_proxy_val = custom_input
 
+    # Wybór województwa
+    console.print(f"\n[bold cyan]📍 {t('prompt_region')}:[/bold cyan]")
+    region_names_hint = ", ".join(list(VOIVODESHIPS.keys())[:6]) + "..."
+    console.print(f"[dim]Dostępne opcje: 0 (Cała Polska) lub nazwa, np. {region_names_hint}[/dim]")
+    raw_region = Prompt.ask("Województwo / Region", default="0", console=console).strip()
+    selected_region = normalize_region(raw_region)
+
     pages = IntPrompt.ask(f"\n{t('prompt_pages')}", default=3, console=console)
     pages = max(1, min(pages, 25))
 
@@ -89,6 +97,7 @@ def run_initial_setup_wizard(console: Console | None = None) -> dict[str, Any]:
         "proxy_mode": proxy_mode,
         "custom_proxy": custom_proxy_val,
         "proxy_file": proxy_file_val,
+        "region": selected_region,
         "pages": pages,
         "threads": threads,
         "watch": watch_mode,

@@ -28,6 +28,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "proxy_mode_rotator": "2. Local ProxyScanner Rotator (auto-detects 127.0.0.1:8080)",
         "proxy_mode_custom": "3. Custom Proxy or Proxy list file",
         "prompt_custom_proxy_value": "Enter proxy URL (e.g. http://user:pass@ip:port) or path to proxy.txt",
+        "prompt_region": "Filter by Polish voivodeship / region (0 = All Poland, or name e.g. mazowieckie)",
+        "region_all": "All Poland",
+        "tag_region": "Region",
         "prompt_pages": "Default OLX pages to scan per cycle (1-25)",
         "prompt_watch_mode": "Enable continuous monitoring loop (watch mode) by default?",
         "prompt_interval": "Watch mode interval between scans (in seconds)",
@@ -87,6 +90,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "proxy_mode_rotator": "2. Lokalny rotator ProxyScanner (automatyczne wykrycie 127.0.0.1:8080)",
         "proxy_mode_custom": "3. Własne proxy lub ścieżka do pliku z listą proxy",
         "prompt_custom_proxy_value": "Wpisz adres proxy (np. http://user:pass@ip:port) lub ścieżkę do pliku proxy.txt",
+        "prompt_region": "Województwo (0 = Cała Polska, lub np. mazowieckie, slaskie, wielkopolskie)",
+        "region_all": "Cała Polska",
+        "tag_region": "Województwo",
         "prompt_pages": "Domyślna liczba stron OLX do zbadania w cyklu (1-25)",
         "prompt_watch_mode": "Czy włączyć domyślnie tryb ciągłego monitorowania (watch mode)?",
         "prompt_interval": "Interwał sprawdzania w trybie watch (w sekundach)",
@@ -146,6 +152,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "proxy_mode_rotator": "2. Локальний ротатор ProxyScanner (автовиявлення 127.0.0.1:8080)",
         "proxy_mode_custom": "3. Власний проксі або файл зі списком проксі",
         "prompt_custom_proxy_value": "Введіть URL проксі (напр. http://user:pass@ip:port) або шлях до proxy.txt",
+        "prompt_region": "Фільтр за воєводством (0 = Вся Польща, або назва, напр. mazowieckie)",
+        "region_all": "Вся Польща",
+        "tag_region": "Регіон",
         "prompt_pages": "Кількість сторінок OLX для сканування за цикл (1-25)",
         "prompt_watch_mode": "Увімкнути режим безперервного моніторингу (watch mode) за замовчуванням?",
         "prompt_interval": "Інтервал перевірки у фоновому режимі (у секундах)",
@@ -205,6 +214,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "proxy_mode_rotator": "2. Lokaler ProxyScanner Rotator (erkennt 127.0.0.1:8080 automatisch)",
         "proxy_mode_custom": "3. Eigener Proxy oder Proxy-Listen-Datei",
         "prompt_custom_proxy_value": "Proxy-URL (z. B. http://user:pass@ip:port) oder Pfad zu proxy.txt eingeben",
+        "prompt_region": "Nach polnischer Woiwodschaft filtern (0 = Ganz Polen, z.B. mazowieckie)",
+        "region_all": "Ganz Polen",
+        "tag_region": "Region",
         "prompt_pages": "Standardanzahl an OLX-Seiten pro Scan-Zyklus (1-25)",
         "prompt_watch_mode": "Dauerhaften Überwachungsmodus (Watch-Modus) standardmäßig aktivieren?",
         "prompt_interval": "Intervall im Watch-Modus (in Sekunden)",
@@ -264,6 +276,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "proxy_mode_rotator": "2. Лакальны рататар ProxyScanner (аўтавыяўленне 127.0.0.1:8080)",
         "proxy_mode_custom": "3. Уласны проксі або файл са спісам проксі",
         "prompt_custom_proxy_value": "Увядзіце URL проксі (напр. http://user:pass@ip:port) або шлях да proxy.txt",
+        "prompt_region": "Фільтр па ваяводству (0 = Уся Польшча, альбо напр. mazowieckie)",
+        "region_all": "Уся Польшча",
+        "tag_region": "Рэгіён",
         "prompt_pages": "Колькасць старонак OLX для сканавання за цыкл (1-25)",
         "prompt_watch_mode": "Уключыць рэжым бесперапыннага маніторынгу (watch mode) па змаўчанні?",
         "prompt_interval": "Інтэрвал праверкі ў фонавым рэжыме (у секундах)",
@@ -305,7 +320,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "report_title": "📊 Выніковы справаздача сканэра",
         "final_table_title": "📱 БАЗА ДАНЫХ IPHONE (Вынікі сесіі)",
         "resuming_pending": "Знойдзена {count} незавершаных аналізаў з папярэдняй сесіі. Аднаўленне...",
-        "early_stop_hit": "Мяжа навізны на стар. {page} (100% ужо ў базе). Старонкі {page+1}..{total} прапушчаны!",
+        "early_stop_hit": "Mяжа навізны на стар. {page} (100% ужо ў базе). Старонкі {page+1}..{total} прапушчаны!",
         "page_identical": "Старонка 1 ідэнтычная папярэдняму скану (няма новых аб'яў на OLX).",
         "offer_recognized": "Распазнана: {model} (АКБ: {battery}, Стан: {status})",
     },
@@ -329,6 +344,19 @@ def t(key: str, **kwargs: Any) -> str:
     text = TRANSLATIONS.get(lang, {}).get(key)
     if text is None:
         text = TRANSLATIONS.get(DEFAULT_LANG, {}).get(key, key)
+    if kwargs:
+        try:
+            return text.format(**kwargs)
+        except Exception:
+            return text
+    return text
+
+def tl(lang: str, key: str, **kwargs: Any) -> str:
+    """Tłumaczenie dla jawnie podanego języka (per‑request, bez globalnego stanu)."""
+    lang = lang if lang in TRANSLATIONS else DEFAULT_LANG
+    text = TRANSLATIONS[lang].get(key)
+    if text is None:
+        text = TRANSLATIONS[DEFAULT_LANG].get(key, key)
     if kwargs:
         try:
             return text.format(**kwargs)

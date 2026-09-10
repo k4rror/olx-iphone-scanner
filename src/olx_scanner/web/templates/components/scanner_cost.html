@@ -1,0 +1,41 @@
+<section class="card-dark glow-pos col-span-12 xl:col-span-4 xl:col-start-9 xl:row-start-1 flex flex-col p-5">
+  <div class="flex items-start justify-between gap-3">
+    <div class="min-w-0">
+      <p class="text-[10px] font-bold tracking-[.08em] uppercase text-white/45">{{ t('cost_eyebrow') }}</p>
+      <p class="text-[11.5px] text-white/70 mt-0.5">{{ t('cost_sub') }}</p>
+    </div>
+    <span class="w-7 h-7 rounded-lg bg-white/[.08] grid place-items-center shrink-0">
+      <i data-lucide="calculator" class="w-3.5 h-3.5 text-emerald-300"></i>
+    </span>
+  </div>
+
+  <div class="mt-4">
+    <div class="flex items-end gap-1.5">
+      <span id="probe-cost-pln" class="font-mono text-[32px] font-bold leading-none tracking-[-0.02em] tabular-nums">0.00</span>
+      <span class="font-mono text-sm text-white/45 mb-0.5">{{ t('cost_currency') }}</span>
+    </div>
+    <div id="probe-cost-usd" class="font-mono text-[11px] text-emerald-300/80 mt-2">{{ t('cost_standard', usd='0.000') }}</div>
+    <div class="font-mono text-[10px] text-white/40 mt-0.5 tabular-nums">
+      {{ t('cost_range_label') }} <span id="probe-cost-range">–</span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-3 gap-2 mt-auto pt-4">
+    <div class="rounded-lg bg-white/[.06] p-2.5 min-w-0 border border-white/[.06]">
+      <div class="text-[9px] font-bold tracking-[.06em] uppercase text-white/45">{{ t('cost_region') }}</div>
+      <div id="probe-region-name" class="text-[12px] font-semibold truncate mt-1 text-white/90">{{ t('set_region_all') }}</div>
+    </div>
+    <div class="rounded-lg bg-white/[.06] p-2.5 border border-white/[.06]">
+      <div class="text-[9px] font-bold tracking-[.06em] uppercase text-white/45">{{ t('cost_items') }}</div>
+      <div id="probe-total-items" class="text-[12px] font-semibold font-mono mt-1 text-white/90">…</div>
+    </div>
+    <div class="rounded-lg bg-white/[.06] p-2.5 border border-white/[.06]">
+      <div class="text-[9px] font-bold tracking-[.06em] uppercase text-white/45">{{ t('cost_pages') }}</div>
+      <div id="probe-total-pages" class="text-[12px] font-semibold font-mono mt-1 text-white/90">…</div>
+    </div>
+  </div>
+
+  <p class="text-[9.5px] text-white/35 mt-3 leading-relaxed">
+    {{ t('cost_note') }}
+  </p>
+</section>
