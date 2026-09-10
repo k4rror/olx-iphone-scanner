@@ -40,3 +40,11 @@ proxies_ranked.txt
 # Narzędzia testowe
 .pytest_cache/
 .ruff_cache/
+.coverage
+htmlcov/
+
+# Artefakty weryfikacji UI (zrzuty ekranu, skrypty pomiarowe Playwright)
+.ui-shots/
+
+# Lokalne ustawienia narzędzi (Claude Code)
+.claude/settings.local.json
