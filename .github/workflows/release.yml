@@ -1,0 +1,53 @@
+name: Release
+
+# Tworzy GitHub Release przy wypchnięciu tagu w formacie v* (np. v1.0.0).
+#
+# Tytuł i treść wydania pochodzą z komunikatu tagu:
+#     git tag -a v1.0.0 -F notes.md      # plik UTF-8
+#   pierwsza linia komunikatu -> tytuł wydania
+#   reszta                     -> treść changelogu (markdown)
+#
+# Gdy tag nie ma komunikatu (albo jest to tag lekki), treść generuje GitHub
+# na podstawie commitów od poprzedniego wydania (--generate-notes).
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (pełna historia dla --generate-notes)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Utwórz GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          TITLE=$(git tag -l --format='%(contents:subject)' "$TAG")
+          git tag -l --format='%(contents:body)' "$TAG" > "$RUNNER_TEMP/notes.md"
+
+          # Treść z tagu, jeśli nie jest pusta (same białe znaki się nie liczą).
+          if [ -n "$(tr -d '[:space:]' < "$RUNNER_TEMP/notes.md")" ]; then
+            echo "Treść changelogu pobrana z komunikatu tagu $TAG."
+            gh release create "$TAG" \
+              --title "${TITLE:-$TAG}" \
+              --notes-file "$RUNNER_TEMP/notes.md" \
+              --verify-tag
+          else
+            echo "Tag $TAG bez komunikatu – generuję treść z commitów."
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --generate-notes \
+              --verify-tag
+          fi
